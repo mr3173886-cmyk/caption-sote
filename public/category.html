@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Box</title>
+    <style>
+        /* পুরো ব্যাকগ্রাউন্ড এবং স্নোফল সেটআপ */
+        body { 
+            background: #0b0e14; 
+            color: #ffffff; 
+            font-family: 'Segoe UI', sans-serif; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            min-height: 100vh; 
+            margin: 0; 
+            padding: 20px; 
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* ব্যাকগ্রাউন্ড স্নোফল ইফেক্ট */
+        .snowflake { 
+            position: fixed; top: -10px; color: #fff; font-size: 15px; 
+            z-index: 0; animation: fall linear infinite; pointer-events: none; 
+        }
+        @keyframes fall { to { transform: translateY(100vh); } }
+
+        h2 { color: #3b82f6; z-index: 1; margin-bottom: 25px; }
+
+        .input-area { display: flex; gap: 10px; width: 100%; max-width: 500px; margin-bottom: 30px; z-index: 1; }
+        
+        input { 
+            padding: 15px; border-radius: 12px; border: 2px solid #3b82f6; 
+            background: #1c1f26; color: white; flex: 1; font-size: 16px;
+        }
+
+        .add-btn { 
+            padding: 10px 20px; border-radius: 12px; background: #3b82f6; 
+            border: none; color: white; font-weight: bold; cursor: pointer; 
+        }
+
+        /* নীল রঙের বক্স (Cards) */
+        .item { 
+            background: #0d1b2a; /* গাঢ় নীল ব্যাকগ্রাউন্ড */
+            padding: 20px; 
+            margin: 10px 0; 
+            width: 100%; 
+            max-width: 500px; 
+            border-radius: 15px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            border: 2px solid #3b82f6; /* নীল বর্ডার */
+            z-index: 1;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+        }
+
+        .text-content { font-size: 18px; word-break: break-word; margin-right: 15px; }
+
+        .del-btn { 
+            background: #ef4444; border: none; color: white; padding: 10px 15px; 
+            border-radius: 8px; cursor: pointer; font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <h2 id="title"></h2>
+    
+    <div class="input-area">
+        <input id="text" placeholder="লিখে Add করুন...">
+        <button class="add-btn" onclick="add()">Add</button>
+    </div>
+
+    <div id="list" style="width:100%; display:flex; flex-direction:column; align-items:center;"></div>
+    
+    <script>
+        // স্নোফল ইফেক্ট জেনারেটর
+        function createSnow() {
+            const s = document.createElement('div'); 
+            s.innerHTML = '❄'; s.className = 'snowflake';
+            s.style.left = Math.random() * 100 + 'vw';
+            s.style.animationDuration = Math.random() * 3 + 2 + 's';
+            document.body.appendChild(s);
+            setTimeout(() => s.remove(), 5000);
+        }
+        setInterval(createSnow, 300);
+
+        const cat = window.location.pathname.substring(1);
+        document.getElementById('title').innerText = cat + " Collection";
+        
+        async function load() {
+            const res = await fetch(`/api/captions/${cat}`);
+            const data = await res.json();
+            document.getElementById('list').innerHTML = data.captions.map(c => 
+                `<div class="item">
+                    <span class="text-content">${c.text}</span> 
+                    <button class="del-btn" onclick="del('${c._id}')">Delete</button>
+                </div>`).join('');
+        }
+        
+        async function add() {
+            const text = document.getElementById('text').value;
+            if(!text) return;
+            await fetch('/api/captions', { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({text, category: cat}) });
+            document.getElementById('text').value = '';
+            load();
+        }
+        async function del(id) {
+            await fetch(`/api/captions/${id}`, { method: 'DELETE' });
+            load();
+        }
+        load();
+    </script>
+</body>
+  </html>
+  
